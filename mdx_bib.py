@@ -25,6 +25,7 @@ class Bibliography(object):
 
         self.citations = OrderedDict()
         self.references = dict()
+        self.num_keys = dict()
 
         if bibtex_file:
             try:
@@ -38,6 +39,7 @@ class Bibliography(object):
 
     def addCitation(self, citekey):
         self.citations[citekey] = self.citations.get(citekey, 0) + 1
+        if citekey not in self.num_keys: self.num_keys[citekey] = len(self.citations)
 
     def setReference(self, citekey, reference):
         self.references[citekey] = reference
@@ -61,13 +63,13 @@ class Bibliography(object):
         volume = ref.fields.get("volume", "")
         year = ref.fields.get("year")
 
-        reference = "<p>%s: <i>%s</i>." % (authors, title)
+        reference = "%s: <i>%s</i>." % (authors, title)
         if journal:
             reference += " %s." % journal
             if volume:
                 reference += " <b>%s</b>," % volume
 
-        reference += " (%s)</p>" % year
+        reference += " (%s)" % year
 
         return reference
 
@@ -87,7 +89,7 @@ class Bibliography(object):
             tr = etree.SubElement(tbody, "tr")
             tr.set("id", self.referenceID(id))
             ref_id = etree.SubElement(tr, "td")
-            ref_id.text = id
+            ref_id.text = f"[{self.num_keys[id]}]"
             ref_txt = etree.SubElement(tr, "td")
             if id in self.references:
                 self.extension.parser.parseChunk(ref_txt, self.references[id])
@@ -158,7 +160,7 @@ class CitationsPattern(Pattern):
             a.set("id", self.bib.citationID(id))
             a.set("href", "#" + self.bib.referenceID(id))
             a.set("class", "citation")
-            a.text = id
+            a.text = f"{self.bib.num_keys[id]}"
 
             return a
         else:
